@@ -1,6 +1,6 @@
 package client
 
-import Constants
+import util.Constants
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStream

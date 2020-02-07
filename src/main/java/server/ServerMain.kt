@@ -1,6 +1,6 @@
 package server
 
-import Constants
+import util.Constants
 
 fun main() {
     val server = Server(Constants.port)

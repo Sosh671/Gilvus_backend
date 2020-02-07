@@ -1,13 +1,15 @@
 package server
 
 import org.json.simple.JSONObject
+import util.Status
+import util.validatePhoneFormat
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
 import java.io.OutputStream
 import java.net.Socket
 
-class ServerWorker(private val server: Server, private val clientSocket: Socket) : Thread() {
+class ServerWorker(private val actionsHandler: Actions, private val clientSocket: Socket) : Thread() {
 
     var login: String? = null
         private set
@@ -23,6 +25,7 @@ class ServerWorker(private val server: Server, private val clientSocket: Socket)
         }
     }
 
+    @Suppress("MoveVariableDeclarationIntoWhen")
     private fun handleClientSocket() {
         val inputStream = clientSocket.getInputStream()
         outputStream = clientSocket.getOutputStream()
@@ -30,33 +33,51 @@ class ServerWorker(private val server: Server, private val clientSocket: Socket)
         var line: String?
         while (reader.readLine().also { line = it } != null) {
             println("received: $line")
-            val params: Array<String>? = line?.split(" ")?.toTypedArray()
-            if (params != null && params.isNotEmpty()) {
-                val cmd = params[0]
-                if ("logout" == cmd || "quit".equals(cmd, ignoreCase = true)) {
-                    handleLogout()
-                    break
-                } else if ("login".equals(cmd, ignoreCase = true)) {
-                    requestedLogin(params)
-                } else {
-                    val msg = "Unknown command: $cmd\n"
-                    outputStream?.write(msg.toByteArray())
+
+            if (!line.isNullOrBlank() && !line.isNullOrEmpty()) {
+                // remove multiple whitespaces in a row and put formatted params into an array
+                val params: Array<String>? = line?.trim()?.replace("\\s+".toRegex(), " ")?.split(" ")?.toTypedArray()
+                if (!params.isNullOrEmpty()) {
+                    val request = params[0].toLowerCase()
+                    when (request) {
+                        "registration", "r" -> {
+                            requestedRegistration(params)
+                        }
+                        "login" -> {
+                            requestedLogin(params)
+                        }
+                        "logout" -> {
+
+                        }
+                        else -> {
+                            sendStatus(Status(false, "Unknown request: $request\n"))
+                        }
+                    }
                 }
-            }
+            } else
+                sendStatus(Status(false, "Unknown request: $line\n"))
         }
         clientSocket.close()
     }
 
+    private fun requestedRegistration(params: Array<String>) {
+        if (params.size == 2) {
+            val phone = params[1]
+            if (phone.validatePhoneFormat()) {
+                val result = actionsHandler.registration(phone, "new user")
+                sendStatus(result)
+            } else {
+                sendStatus(Status(false, "Invalid phone number format"))
+            }
+        } else {
+            sendStatus(Status(false, "Invalid parameters number for registration"))
+        }
+    }
+
     @Throws(IOException::class)
     private fun handleLogout() {
-        val workerList = server.getWorkerList()
         // send other online users current user's status
         val onlineMsg = "offline $login\n"
-        for (worker in workerList) {
-            if (login != worker.login) {
-                worker.send(onlineMsg)
-            }
-        }
         clientSocket.close()
     }
 
@@ -76,24 +97,18 @@ class ServerWorker(private val server: Server, private val clientSocket: Socket)
                 outputStream!!.write(msg.toByteArray())
             }
         } else {
-            sendStatus(false)
+            sendStatus(Status(false, "Invalid parameters number for login"))
         }
     }
 
-    private fun sendStatus(success: Boolean) {
+    private fun sendStatus(status: Status) {
         val obj = JSONObject()
-        obj["status"] = success
+        obj["status"] = status.status
+        status.message?.let {
+            if (it.isNotBlank() && it.isNotEmpty())
+                obj["message"] = it
+        }
 
-        val string = StringBuilder()
-        for (i in 1..1000000)
-            string.append("sdfsdfdsfsdf")
-        obj["sdf"] = string.toString()
-        obj["xczv"] = "\n"
-
-        send(obj.toJSONString())
-    }
-
-    private fun send(msg: String) {
-        outputStream?.write("$msg\n".toByteArray())
+        outputStream?.write("${obj.toJSONString()}\n".toByteArray())
     }
 }
