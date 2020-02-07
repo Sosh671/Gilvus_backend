@@ -10,7 +10,7 @@ import java.sql.*
  */
 object JavaToMySQL {
     // JDBC URL, username and password of MySQL server
-    private const val url = "jdbc:mysql://localhost:3306/test"
+    private const val url = "jdbc:mysql://localhost:3306/gilvus"
     private const val user = "popeye"
     private const val password = "password"
     // JDBC variables for opening and managing connection
