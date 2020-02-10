@@ -1,8 +1,8 @@
 package server
 
-import org.json.simple.JSONObject
+import org.json.JSONException
+import org.json.JSONObject
 import util.Status
-import util.validatePhoneFormat
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
@@ -11,10 +11,10 @@ import java.net.Socket
 
 class ServerWorker(private val actionsHandler: Actions, private val clientSocket: Socket) : Thread() {
 
-    var login: String? = null
-        private set
+    private var token: String? = null
 
     private var outputStream: OutputStream? = null
+
     override fun run() {
         try {
             handleClientSocket()
@@ -37,21 +37,28 @@ class ServerWorker(private val actionsHandler: Actions, private val clientSocket
             if (!line.isNullOrBlank() && !line.isNullOrEmpty()) {
                 // remove multiple whitespaces in a row and put formatted params into an array
                 val params: Array<String>? = line?.trim()?.replace("\\s+".toRegex(), " ")?.split(" ")?.toTypedArray()
-                if (!params.isNullOrEmpty()) {
-                    val request = params[0].toLowerCase()
-                    when (request) {
-                        "registration", "r" -> {
-                            requestedRegistration(params)
-                        }
-                        "login" -> {
-                            requestedLogin(params)
-                        }
-                        "logout" -> {
+                if (params != null && params.size == 2) {
+                    try {
+                        val request = params[0].toLowerCase()
+                        val obj = JSONObject(params[1])
 
+                        when (request) {
+                            "registration", "r" -> {
+                                requestedRegistration(obj)
+                            }
+                            "login" -> {
+                                requestedLogin(obj)
+                            }
+                            "confirm", "c" -> {
+                                requestedConfirmation(obj)
+                            }
+                            else -> {
+                                sendStatus(Status(false, "Unknown request: $request\n"))
+                            }
                         }
-                        else -> {
-                            sendStatus(Status(false, "Unknown request: $request\n"))
-                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        sendStatus(Status(false, "Error"))
                     }
                 }
             } else
@@ -60,55 +67,56 @@ class ServerWorker(private val actionsHandler: Actions, private val clientSocket
         clientSocket.close()
     }
 
-    private fun requestedRegistration(params: Array<String>) {
-        if (params.size == 2) {
-            val phone = params[1]
-            if (phone.validatePhoneFormat()) {
-                val result = actionsHandler.registration(phone, "new user")
-                sendStatus(result)
-            } else {
-                sendStatus(Status(false, "Invalid phone number format"))
-            }
-        } else {
-            sendStatus(Status(false, "Invalid parameters number for registration"))
+    private fun requestedRegistration(obj: JSONObject) {
+        try {
+            val phone = obj.getInt("phone")
+            val result = actionsHandler.registration(phone, "test")
+            sendStatus(result)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            sendStatus(Status(false, "Registration error"))
         }
     }
 
-    @Throws(IOException::class)
+    private fun requestedConfirmation(obj: JSONObject) {
+        try {
+            val phone = obj.getInt("phone")
+            val code = obj.getInt("code")
+            val result = actionsHandler.confirmAuthorization(phone, code)
+            sendStatus(result)
+        } catch (e: Exception) {
+            sendStatus(Status(false, "Confirmation error"))
+        }
+    }
+
+    private fun requestedLogin(obj: JSONObject) {
+        try {
+            val phone = obj.getInt("phone")
+            val password = obj.getString("password")
+            val result = actionsHandler.login(phone, password)
+            sendStatus(result)
+        } catch (e: JSONException) {
+            val phone = obj.getInt("phone")
+            val result = actionsHandler.login(phone, null)
+            sendStatus(result)
+        } catch (e: Exception) {
+            sendStatus(Status(false, "Login error"))
+        }
+    }
+
     private fun handleLogout() {
-        // send other online users current user's status
-        val onlineMsg = "offline $login\n"
         clientSocket.close()
     }
 
-    @Throws(IOException::class)
-    private fun requestedLogin(params: Array<String>) {
-        if (params.size == 3) {
-
-            val login = params[1]
-            val password = params[2]
-            if (login == "guest" && password == "guest" || login == "jim" && password == "jim") {
-                val msg = "ok login\n"
-                outputStream!!.write(msg.toByteArray())
-                this.login = login
-                println("User logged in succesfully: $login")
-            } else {
-                val msg = "error login\n"
-                outputStream!!.write(msg.toByteArray())
-            }
-        } else {
-            sendStatus(Status(false, "Invalid parameters number for login"))
-        }
-    }
-
     private fun sendStatus(status: Status) {
-        val obj = JSONObject()
-        obj["status"] = status.status
-        status.message?.let {
+        val obj: JSONObject = status.data ?: JSONObject()
+        obj.put("status", status.status)
+
+        status.errorMessage?.let {
             if (it.isNotBlank() && it.isNotEmpty())
-                obj["message"] = it
+                obj.put("message", it)
         }
 
-        outputStream?.write("${obj.toJSONString()}\n".toByteArray())
+        outputStream?.write("$obj\n".toByteArray())
     }
 }

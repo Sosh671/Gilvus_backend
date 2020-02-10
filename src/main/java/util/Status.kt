@@ -1,3 +1,5 @@
 package util
 
-data class Status(val status: Boolean, val message: String? = null)
+import org.json.JSONObject
+
+data class Status(val status: Boolean, val errorMessage: String? = null, var data: JSONObject? = null)
