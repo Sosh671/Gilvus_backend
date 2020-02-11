@@ -18,24 +18,23 @@ fun main() {
         socket.connect(InetSocketAddress(pcLocalhostAddress, port))
         println("connected")
         Reader(socket.getInputStream()).start()
-        var i = 0
         val stream = socket.getOutputStream()
+
         stream.write(registerRequest())
-        println("info written")
-        while(true) {
-            i = 1
-        }
-        println("after")
     } catch (e: Exception) {
-        System.err.println(e)
+        e.printStackTrace()
     }
 }
 
 fun registerRequest(): ByteArray {
+    val dataObject = JSONObject()
+    dataObject.put("phone", "12312323")
+
     val obj = JSONObject()
-    obj.put("phone", "123123123")
-    val request = "registration $obj\n".toByteArray()
-    return request
+    obj.put("request", "registration")
+    obj.put("data", dataObject)
+    println("requested $obj")
+    return "$obj\n".toByteArray()
 }
 
 class Reader(private val stream: InputStream) : Thread() {
@@ -43,13 +42,8 @@ class Reader(private val stream: InputStream) : Thread() {
         super.run()
         val reader = BufferedReader(InputStreamReader(stream))
         var line: String
-//        val file = File("vasya")
-//        if (!file.exists())
-//            file.createNewFile()
         while (reader.readLine().also { line = it } != null) {
-            println("new cycle")
-            println(line)
-//            file.writeText(line)
+            println("server response: $line")
         }
     }
 }
