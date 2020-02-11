@@ -77,8 +77,12 @@ class Server(private val serverPort: Int) : Thread(), Actions {
         dbRepository?.login(phoneNumber, password) ?: Status(false)
 
     private fun generateToken(): String {
-        val bytes = ByteArray(24)
+        val bytes = ByteArray(30)
         SecureRandom().nextBytes(bytes)
-        return String(bytes)
+        val builder = StringBuilder(40)
+        builder
+            .append(Base64.getUrlEncoder().withoutPadding().encodeToString(bytes))
+            .setLength(30)
+        return builder.toString()
     }
 }

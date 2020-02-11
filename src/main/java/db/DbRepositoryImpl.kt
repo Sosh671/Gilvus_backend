@@ -14,6 +14,7 @@ private const val CHECK_SMS_AND_PHONE_EXISTS = "SELECT EXISTS(" +
         "INNER JOIN users ON sms_codes.user_id = users.id " +
         "WHERE phone = ? AND sms_code = ?" +
         ")"
+private const val INSERT_USER_TOKEN = "INSERT INTO users_tokens VALUES(?,?,?)"
 
 @Suppress("LiftReturnOrAssignment")
 class DbRepositoryImpl(private val dbConnection: Connection) : DbRepository {
@@ -24,6 +25,8 @@ class DbRepositoryImpl(private val dbConnection: Connection) : DbRepository {
             val ar = arrayOf("ID")
             val insertUserStatement = dbConnection.prepareStatement(INSERT_USER, ar)
             val insertSmsStatement = dbConnection.prepareStatement(INSERT_SMS_CODE)
+
+            // begin transaction
             dbConnection.autoCommit = false
 
             insertUserStatement.setInt(1, 0)
@@ -43,7 +46,7 @@ class DbRepositoryImpl(private val dbConnection: Connection) : DbRepository {
             if (insertedUserId == 0L)
                 throw SQLException()
 
-            // insert sms code into staging table
+            // insert sms code
             insertSmsStatement.setInt(1, 0)
             insertSmsStatement.setLong(2, insertedUserId)
             insertSmsStatement.setInt(3, smsCode)
@@ -53,12 +56,12 @@ class DbRepositoryImpl(private val dbConnection: Connection) : DbRepository {
 
             return Status(false)
         } catch (e: java.sql.SQLIntegrityConstraintViolationException) {
-            e.printStackTrace()
             dbConnection.rollback()
+            e.printStackTrace()
             return Status(false, "Phone already registered")
         } catch (e: Exception) {
-            e.printStackTrace()
             dbConnection.rollback()
+            e.printStackTrace()
             return Status(false)
         } finally {
             dbConnection.autoCommit = true
@@ -83,30 +86,42 @@ class DbRepositoryImpl(private val dbConnection: Connection) : DbRepository {
 
     override fun confirmAuthorization(phone: Int, smsCode: Int, token: String): Status {
         try {
-            val query = "INSERT INTO users_tokens VALUES(?,?,?)"
-            val idQuery = "SELECT id FROM users WHERE phone = ?"
-            val selectStatement = dbConnection.prepareStatement(CHECK_SMS_AND_PHONE_EXISTS)
-            val selectIdStatement = dbConnection.prepareStatement(idQuery)
-            val insertStatement = dbConnection.prepareStatement(query)
+            val validateSmsStatement = dbConnection.prepareStatement(CHECK_SMS_AND_PHONE_EXISTS)
+            val selectUserIdStatement = dbConnection.prepareStatement(GET_USER_ID_BY_PHONE)
+            val insertUserTokenStatement = dbConnection.prepareStatement(INSERT_USER_TOKEN)
+
+            // begin transaction
             dbConnection.autoCommit = false
 
-            selectStatement.setInt(1, phone)
-            selectStatement.setInt(2, smsCode)
-            val result = selectStatement.executeQuery()
-            result.next()
-            // get result by column id
+            // first validate if the phone and the sms code are connected
+            validateSmsStatement.setInt(1, phone)
+            validateSmsStatement.setInt(2, smsCode)
+            val result = validateSmsStatement.executeQuery().also { it.next() }
+            // if > 0  - validated connection
             val exists = result.getInt(result.metaData.getColumnName(1))
 
-            if (exists != 0) {
-                selectIdStatement.setInt(1, phone)
-                val idResult = selectIdStatement.executeQuery().also { it.next() }
-                val id = idResult.getInt(1)
-                println("id $id")
+            if (exists > 0) {
+                // get user id by phone
+                selectUserIdStatement.setInt(1, phone)
+                val idResult = selectUserIdStatement.executeQuery().also { it.next() }
+                val userId = idResult.getInt(1)
 
-                return Status(true)
+                // insert authorization token
+                insertUserTokenStatement.setInt(1, 0)
+                insertUserTokenStatement.setInt(2, userId)
+                insertUserTokenStatement.setString(3, token)
+                val insertTokenResult = insertUserTokenStatement.executeUpdate()
+
+                dbConnection.commit()
+
+                if (insertTokenResult > 0)
+                    return Status(true)
+                else
+                    return Status(false)
             } else
                 throw SQLException()
         } catch (e: Exception) {
+            dbConnection.rollback()
             e.printStackTrace()
             return Status(false)
         } finally {
