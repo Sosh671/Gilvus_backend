@@ -1,9 +1,9 @@
 package server
 
+import data.models.RegistrationData
+import data.models.User
 import db.DbRepository
 import db.DbRepositoryImpl
-import db.PhoneStatus
-import db.models.User
 import org.json.JSONObject
 import sms.SmsController
 import util.Constants
@@ -23,17 +23,50 @@ class ClientRequestsHandler : Actions {
         smsController = SmsController()
     }
 
-    override fun registration(phoneNumber: Int, name: String): Status {
-        val generateSms = smsController?.generateSms() ?: return Status(false)
+    var registrationData: RegistrationData? = null
 
-        return dbRepository?.insertUser(
-            User(null, name, phoneNumber, null, null),
-            generateSms
-        ) ?: Status(false)
+    override fun registration(phoneNumber: Int, name: String): Status {
+        val alreadyRegistered = dbRepository?.phoneNumberExists("$phoneNumber") ?: return Status(false)
+        if (alreadyRegistered) return Status(false, "Phone already registered")
+
+        val generateSms = smsController?.generateSms() ?: return Status(false, "Couldn't send an sms")
+        smsController?.sendSms(generateSms) ?: return Status(false, "Couldn't send an sms")
+
+        registrationData = RegistrationData(phoneNumber, name, generateSms)
+        return Status(true)
     }
 
-    override fun checkPhoneNumber(phoneNumber: String): PhoneStatus =
-        dbRepository?.checkPhoneNumber(phoneNumber) ?: PhoneStatus.UNKNOWN_ERROR
+    override fun confirmRegistration(phoneNumber: Int, smsCode: Int): Status {
+        try {
+            if (phoneNumber != registrationData!!.phone) return Status(false, "Wrong sms code")
+            if (smsCode != registrationData!!.smsCode) return Status(false, "Wrong sms code")
+            val token = generateToken()
+
+            val result = dbRepository?.insertUserAndToken(
+                User(
+                    null,
+                    registrationData!!.name,
+                    registrationData!!.phone,
+                    null,
+                    null
+                ),
+                token
+            ) ?: return Status(false)
+
+            if (result.status) {
+                val obj = JSONObject()
+                obj.put("token", token)
+                result.data = obj
+            }
+            return result
+        } catch (e: NullPointerException) {
+            e.printStackTrace()
+            return Status(false, "No registration data detected")
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return Status(false, "Unknown error")
+        }
+    }
 
     override fun confirmAuthorization(phoneNumber: Int, smsCode: Int): Status {
         val token = generateToken()

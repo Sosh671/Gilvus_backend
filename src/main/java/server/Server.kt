@@ -1,10 +1,18 @@
 package server
 
-import java.io.IOException
 import java.net.ServerSocket
 import java.util.*
 
 class Server(private val serverPort: Int) : Thread() {
+
+    private fun testRegistration() {
+        val phone = 10
+        val test = ClientRequestsHandler()
+        val status1 = test.registration(phone, "vasiliy")
+        val status2 = test.confirmRegistration(phone, test.registrationData!!.smsCode)
+        println(status1)
+        println(status2)
+    }
 
     override fun run() {
         try {
@@ -18,7 +26,7 @@ class Server(private val serverPort: Int) : Thread() {
                 clients.add(client)
                 client.start()
             }
-        } catch (e: IOException) {
+        } catch (e: Exception) {
             e.printStackTrace()
         }
     }

@@ -41,10 +41,10 @@ CREATE TABLE messages(
 
 CREATE TABLE sms_codes(
     id INT NOT NULL AUTO_INCREMENT,
-    user_id INT NOT NULL,
+    user_phone VARCHAR(30) NOT NULL,
     sms_code INT NOT NULL,
     PRIMARY KEY (id),
-    FOREIGN KEY (user_id) REFERENCES users (id) ON UPDATE CASCADE ON DELETE CASCADE
+    FOREIGN KEY (user_phone) REFERENCES users (phone) ON DELETE CASCADE
 )
 
 CREATE TABLE users_tokens(

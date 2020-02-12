@@ -8,4 +8,6 @@ class SmsController {
             digits += (1..9).random()
         return digits.toInt()
     }
+
+    fun sendSms(code: Int) = true
 }

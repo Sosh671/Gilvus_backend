@@ -1,4 +1,4 @@
-package db.models
+package data.models
 
 data class User(
     val id: Long?,

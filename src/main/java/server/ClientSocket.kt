@@ -44,21 +44,38 @@ class ClientSocket(private val actionsHandler: Actions, private val clientSocket
                     "login" -> {
                         requestedLogin(data)
                     }
-                    "confirm" -> {
-                        requestedConfirmation(data)
+                    "confirm_login" -> {
+                        requestedLoginConfirmation(data)
+                    }
+                    "confirm_registration" -> {
+                        requestedRegistrationConfirmation(data)
                     }
                     else -> {
                         respondToClient(Status(false, "Unknown request: $request\n"))
                     }
                 }
+            } catch (e: JSONException) {
+                e.printStackTrace()
+                respondToClient(Status(false, "You should pass valid json\n"))
             } catch (e: Exception) {
                 e.printStackTrace()
-                respondToClient(Status(false, "Unknown request: $line\\n"))
+                respondToClient(Status(false, "Unknown error\n"))
             }
 
             line = reader.readLine()
         }
         clientSocket.close()
+    }
+    
+    private fun requestedRegistrationConfirmation(obj: JSONObject) {
+        try {
+            val phone = obj.getInt("phone")
+            val code = obj.getInt("code")
+            val result = actionsHandler.confirmRegistration(phone, code)
+            respondToClient(result)
+        } catch (e: Exception) {
+            respondToClient(Status(false, "Confirmation error"))
+        }
     }
 
     private fun requestedRegistration(obj: JSONObject) {
@@ -72,7 +89,7 @@ class ClientSocket(private val actionsHandler: Actions, private val clientSocket
         }
     }
 
-    private fun requestedConfirmation(obj: JSONObject) {
+    private fun requestedLoginConfirmation(obj: JSONObject) {
         try {
             val phone = obj.getInt("phone")
             val code = obj.getInt("code")
