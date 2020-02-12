@@ -3,34 +3,24 @@ package server
 import data.models.RegistrationData
 import data.models.User
 import db.DbRepository
-import db.DbRepositoryImpl
 import org.json.JSONObject
 import sms.SmsController
-import util.Constants
 import util.Status
 import java.security.SecureRandom
-import java.sql.DriverManager
 import java.util.*
 
-class ClientRequestsHandler : Actions {
-
-    private var dbRepository: DbRepository? = null
-    private var smsController: SmsController? = null
-
-    init {
-        val sqlConnection = DriverManager.getConnection(Constants.dbPath, Constants.dbUser, Constants.dbPassword)
-        dbRepository = DbRepositoryImpl(sqlConnection)
-        smsController = SmsController()
-    }
+class ClientRequestsHandler(
+    private val dbRepository: DbRepository,
+    private val smsController: SmsController) : Actions {
 
     var registrationData: RegistrationData? = null
 
     override fun registration(phoneNumber: Int, name: String): Status {
-        val alreadyRegistered = dbRepository?.phoneNumberExists("$phoneNumber") ?: return Status(false)
+        val alreadyRegistered = dbRepository.phoneNumberExists("$phoneNumber")
         if (alreadyRegistered) return Status(false, "Phone already registered")
 
-        val generateSms = smsController?.generateSms() ?: return Status(false, "Couldn't send an sms")
-        smsController?.sendSms(generateSms) ?: return Status(false, "Couldn't send an sms")
+        val generateSms = smsController.generateSms()
+        smsController.sendSms(generateSms)
 
         registrationData = RegistrationData(phoneNumber, name, generateSms)
         return Status(true)
@@ -42,7 +32,7 @@ class ClientRequestsHandler : Actions {
             if (smsCode != registrationData!!.smsCode) return Status(false, "Wrong sms code")
             val token = generateToken()
 
-            val result = dbRepository?.insertUserAndToken(
+            val result = dbRepository.insertUserAndToken(
                 User(
                     null,
                     registrationData!!.name,
@@ -70,7 +60,7 @@ class ClientRequestsHandler : Actions {
 
     override fun confirmAuthorization(phoneNumber: Int, smsCode: Int): Status {
         val token = generateToken()
-        val result = dbRepository?.confirmAuthorization(phoneNumber, smsCode, token) ?: Status(false)
+        val result = dbRepository.confirmAuthorization(phoneNumber, smsCode, token)
         if (result.status) {
             val obj = JSONObject()
             obj.put("token", token)
@@ -79,8 +69,24 @@ class ClientRequestsHandler : Actions {
         return result
     }
 
+    override fun createChatRoom(token: String, members: Array<Int>): Status {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun getChatRoomsList(token: String): Status {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun sendMessage(token: String, roomId: Int): Status {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun getMessages(token: String, roomId: Int, offset: Int, limit: Int): Status {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
     override fun login(phoneNumber: Int, password: String?): Status =
-        dbRepository?.login(phoneNumber, password) ?: Status(false)
+        dbRepository.login(phoneNumber, password) ?: Status(false)
 
     private fun generateToken(): String {
         val randomBytes = ByteArray(30).also { SecureRandom().nextBytes(it) }
