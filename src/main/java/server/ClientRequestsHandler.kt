@@ -16,7 +16,7 @@ class ClientRequestsHandler(
     var registrationData: RegistrationData? = null
 
     override fun registration(phoneNumber: Int, name: String): Status {
-        val alreadyRegistered = dbRepository.phoneNumberExists("$phoneNumber")
+        val alreadyRegistered = dbRepository.isPhoneNumberExists("$phoneNumber")
         if (alreadyRegistered) return Status(false, "Phone already registered")
 
         val generateSms = smsController.generateSms()
@@ -60,7 +60,7 @@ class ClientRequestsHandler(
 
     override fun confirmAuthorization(phoneNumber: Int, smsCode: Int): Status {
         val token = generateToken()
-        val result = dbRepository.confirmAuthorization(phoneNumber, smsCode, token)
+        val result = dbRepository.confirmLogin(phoneNumber, smsCode, token)
         if (result.status) {
             val obj = JSONObject()
             obj.put("token", token)
