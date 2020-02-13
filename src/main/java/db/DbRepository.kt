@@ -4,6 +4,8 @@ import data.models.User
 import util.Status
 import java.sql.Connection
 import java.sql.SQLException
+import java.sql.SQLIntegrityConstraintViolationException
+import java.sql.Statement
 
 private const val INSERT_USER = "INSERT INTO users VALUES(?,?,?,?,?)"
 private const val GET_USER_ID_BY_PHONE = "SELECT id FROM users WHERE phone = ?"
@@ -14,6 +16,8 @@ private const val CHECK_SMS_AND_PHONE_EXISTS = "SELECT EXISTS(" +
         "WHERE phone = ? AND sms_code = ?" +
         ")"
 private const val INSERT_USER_TOKEN = "INSERT INTO users_tokens VALUES(?,?,?)"
+private const val INSERT_NEW_ROOM = "INSERT INTO rooms VALUES(?,?,?)"
+private const val INSERT_NEW_MEMBER = "INSERT INTO members VALUES(?,?,?)"
 
 @Suppress("LiftReturnOrAssignment")
 class DbRepository(private val dbConnection: Connection) {
@@ -78,7 +82,7 @@ class DbRepository(private val dbConnection: Connection) {
         }
     }
 
-    fun login(phone: Int, password: String?): Status {
+    fun validateCredentials(phone: Int, password: String?): Status {
         try {
             val query = "SELECT EXISTS(SELECT id FROM users WHERE phone = ? AND password = ?)"
             val statement = dbConnection.prepareStatement(query)
@@ -141,7 +145,42 @@ class DbRepository(private val dbConnection: Connection) {
         }
     }
 
-    fun createNewRoom(token: String, roomName: String, roomMembers: Array<Int>) {
+    fun createNewRoom(token: String, roomName: String, roomMembers: Array<Int>): Status {
+        try {
+            val insertNewRoomStatement = dbConnection.prepareStatement(INSERT_NEW_ROOM, Statement.RETURN_GENERATED_KEYS)
+            val insertMemberStatement = dbConnection.prepareStatement(INSERT_NEW_MEMBER)
 
+            // begin transaction
+            dbConnection.autoCommit = false
+
+            // insert new room
+            insertNewRoomStatement.setInt(1, 0)
+            insertNewRoomStatement.setString(2, roomName)
+            insertNewRoomStatement.setLong(3, System.currentTimeMillis())
+            insertNewRoomStatement.executeUpdate()
+            val keys = insertNewRoomStatement.generatedKeys.also { it.next() }
+            val insertedRoomId = keys.getInt(1)
+            if (insertedRoomId < 1) throw SQLException("Error while inserting new room")
+
+            // insert all the members of the room
+            for (i in roomMembers.indices) {
+                insertMemberStatement.setInt(1, 0)
+                insertMemberStatement.setInt(2, insertedRoomId)
+                insertMemberStatement.setInt(3, roomMembers[i])
+                if (insertMemberStatement.executeUpdate() != 1) throw SQLException("Error while inserting new room members")
+            }
+
+            dbConnection.commit()
+            return Status(true)
+        } catch (e: SQLIntegrityConstraintViolationException) {
+            e.printStackTrace()
+            return Status(false, "Some of the members are not existing users")
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return Status(false)
+        } finally {
+            dbConnection.rollback()
+            dbConnection.autoCommit = true
+        }
     }
 }

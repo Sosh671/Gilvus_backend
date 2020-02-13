@@ -20,7 +20,13 @@ class Server(private val serverPort: Int) : Thread(), KoinComponent {
 
     }
 
+    private fun testCreateNewRoom() {
+        val cc by inject<ClientRequestsHandler>()
+        cc.createChatRoom("", intArrayOf(4,5).toTypedArray())
+    }
+
     override fun run() {
+        testCreateNewRoom()
         try {
             val serverSocket = ServerSocket(serverPort)
             while (true) {

@@ -41,12 +41,14 @@ class ClientRequestsHandler(
                     null
                 ),
                 token
-            ) ?: return Status(false)
+            )
 
             if (result.status) {
                 val obj = JSONObject()
                 obj.put("token", token)
                 result.data = obj
+
+                registrationData = null
             }
             return result
         } catch (e: NullPointerException) {
@@ -57,6 +59,9 @@ class ClientRequestsHandler(
             return Status(false, "Unknown error")
         }
     }
+
+    override fun login(phoneNumber: Int, password: String?): Status =
+        dbRepository.validateCredentials(phoneNumber, password)
 
     override fun confirmAuthorization(phoneNumber: Int, smsCode: Int): Status {
         val token = generateToken()
@@ -70,7 +75,7 @@ class ClientRequestsHandler(
     }
 
     override fun createChatRoom(token: String, members: Array<Int>): Status {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+       return dbRepository.createNewRoom(token, "room", members)
     }
 
     override fun getChatRoomsList(token: String): Status {
@@ -84,9 +89,6 @@ class ClientRequestsHandler(
     override fun getMessages(token: String, roomId: Int, offset: Int, limit: Int): Status {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
-
-    override fun login(phoneNumber: Int, password: String?): Status =
-        dbRepository.login(phoneNumber, password) ?: Status(false)
 
     private fun generateToken(): String {
         val randomBytes = ByteArray(30).also { SecureRandom().nextBytes(it) }
