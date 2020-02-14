@@ -2,6 +2,7 @@ package server
 
 import org.koin.core.KoinComponent
 import org.koin.core.inject
+import util.Status
 import java.net.ServerSocket
 import java.util.*
 
@@ -22,11 +23,20 @@ class Server(private val serverPort: Int) : Thread(), KoinComponent {
 
     private fun testCreateNewRoom() {
         val cc by inject<ClientRequestsHandler>()
-        cc.createChatRoom("", intArrayOf(4,5).toTypedArray())
+        cc.createChatRoom("", intArrayOf(4,5, 21).toTypedArray())
+    }
+
+    private fun testGetRooms() {
+        val cc by inject<ClientRequestsHandler>()
+        var dd: Status
+        dd = cc.getChatRoomsList("1234")
+        println(dd)
+        dd = cc.getChatRoomsList("mKewwUQxGeycoUuNcrmQt3gpgyyMkA")
+        println(dd)
     }
 
     override fun run() {
-        testCreateNewRoom()
+        testGetRooms()
         try {
             val serverSocket = ServerSocket(serverPort)
             while (true) {

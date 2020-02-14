@@ -79,7 +79,7 @@ class ClientRequestsHandler(
     }
 
     override fun getChatRoomsList(token: String): Status {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return dbRepository.getAvailableRooms(token)
     }
 
     override fun sendMessage(token: String, roomId: Int): Status {

@@ -1,5 +1,6 @@
 package db
 
+import data.models.Room
 import data.models.User
 import util.Status
 import java.sql.Connection
@@ -18,6 +19,10 @@ private const val CHECK_SMS_AND_PHONE_EXISTS = "SELECT EXISTS(" +
 private const val INSERT_USER_TOKEN = "INSERT INTO users_tokens VALUES(?,?,?)"
 private const val INSERT_NEW_ROOM = "INSERT INTO rooms VALUES(?,?,?)"
 private const val INSERT_NEW_MEMBER = "INSERT INTO members VALUES(?,?,?)"
+private const val GET_USER_ID_BY_TOKEN = "SELECT user_id FROM users_tokens WHERE token = ?"
+private const val GET_ROOMS_LIST = "SELECT rooms.id, rooms.name, rooms.date_created FROM rooms " +
+        "INNER JOIN members ON room_id = rooms.id " +
+        "WHERE members.user_id = ?"
 
 @Suppress("LiftReturnOrAssignment")
 class DbRepository(private val dbConnection: Connection) {
@@ -55,7 +60,7 @@ class DbRepository(private val dbConnection: Connection) {
                 return Status(true)
             else
                 return Status(false)
-        } catch (e: java.sql.SQLIntegrityConstraintViolationException) {
+        } catch (e: SQLIntegrityConstraintViolationException) {
             e.printStackTrace()
             return Status(false, "Phone already registered")
         } catch (e: Exception) {
@@ -172,6 +177,43 @@ class DbRepository(private val dbConnection: Connection) {
 
             dbConnection.commit()
             return Status(true)
+        } catch (e: SQLIntegrityConstraintViolationException) {
+            e.printStackTrace()
+            return Status(false, "Some of the members are not existing users")
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return Status(false)
+        } finally {
+            dbConnection.rollback()
+            dbConnection.autoCommit = true
+        }
+    }
+
+    fun getAvailableRooms(token: String): Status {
+        try {
+            val getTokenStatement = dbConnection.prepareStatement(GET_USER_ID_BY_TOKEN)
+            val getRoomsStatement = dbConnection.prepareStatement(GET_ROOMS_LIST)
+
+            // begin transaction
+            dbConnection.autoCommit = false
+
+            // get user id
+            getTokenStatement.setString(1, token)
+            val result = getTokenStatement.executeQuery()
+            if (!result.next()) return Status(false, "Wrong token")
+            val userId = result.getLong(1)
+
+            // get rooms where the user is a member
+            getRoomsStatement.setLong(1, userId)
+            val roomsResult = getRoomsStatement.executeQuery()
+            val list = ArrayList<Room>()
+            while (roomsResult.next()) {
+                val room = Room(roomsResult.getLong(1), roomsResult.getString(2), roomsResult.getLong(3))
+                list.add(room)
+            }
+
+            dbConnection.commit()
+            return Status(true, data = list)
         } catch (e: SQLIntegrityConstraintViolationException) {
             e.printStackTrace()
             return Status(false, "Some of the members are not existing users")

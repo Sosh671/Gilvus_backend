@@ -2,4 +2,16 @@
 insert into members values(null, 1, 1);
 insert into users values(null, 'jojo', null, null);
 
-SELECT EXISTS(SELECT phone FROM sms_codes INNER JOIN users ON sms_codes.user_id = users.id WHERE phone = 7 AND sms_code = 1959);
+
+SELECT EXISTS(
+    SELECT phone FROM sms_codes
+    INNER JOIN users ON sms_codes.user_id = users.id
+    WHERE phone = 7 AND sms_code = 1959);
+
+
+SELECT * FROM rooms
+INNER JOIN members ON room_id = rooms.id
+WHERE members.user_id = ?
+
+
+SELECT user_id FROM users_tokens WHERE token = ?
