@@ -66,13 +66,16 @@ class ClientSocket(private val actionsHandler: Actions, private val clientSocket
         }
         clientSocket.close()
     }
-    
+
     private fun requestedRegistrationConfirmation(obj: JSONObject) {
         try {
             val phone = obj.getInt("phone")
             val code = obj.getInt("code")
             val result = actionsHandler.confirmRegistration(phone, code)
             respondToClient(result)
+        } catch (e: JSONException) {
+            e.printStackTrace()
+            respondToClient(Status(false, "Wrong arguments"))
         } catch (e: Exception) {
             respondToClient(Status(false, "Confirmation error"))
         }
@@ -83,6 +86,9 @@ class ClientSocket(private val actionsHandler: Actions, private val clientSocket
             val phone = obj.getInt("phone")
             val result = actionsHandler.registration(phone, "New user")
             respondToClient(result)
+        } catch (e: JSONException) {
+            e.printStackTrace()
+            respondToClient(Status(false, "Wrong arguments"))
         } catch (e: Exception) {
             e.printStackTrace()
             respondToClient(Status(false, "Registration error"))
@@ -95,6 +101,9 @@ class ClientSocket(private val actionsHandler: Actions, private val clientSocket
             val code = obj.getInt("code")
             val result = actionsHandler.confirmAuthorization(phone, code)
             respondToClient(result)
+        } catch (e: JSONException) {
+            e.printStackTrace()
+            respondToClient(Status(false, "Wrong arguments"))
         } catch (e: Exception) {
             respondToClient(Status(false, "Confirmation error"))
         }
@@ -110,6 +119,9 @@ class ClientSocket(private val actionsHandler: Actions, private val clientSocket
             val phone = obj.getInt("phone")
             val result = actionsHandler.login(phone, null)
             respondToClient(result)
+        } catch (e: JSONException) {
+            e.printStackTrace()
+            respondToClient(Status(false, "Wrong arguments"))
         } catch (e: Exception) {
             respondToClient(Status(false, "Login error"))
         }

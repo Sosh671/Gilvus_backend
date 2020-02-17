@@ -1,5 +1,6 @@
 package db
 
+import data.models.Message
 import data.models.Room
 import data.models.User
 import util.Status
@@ -10,7 +11,7 @@ import java.sql.Statement
 
 private const val INSERT_USER = "INSERT INTO users VALUES(?,?,?,?,?)"
 private const val GET_USER_ID_BY_PHONE = "SELECT id FROM users WHERE phone = ?"
-//private const val INSERT_SMS_CODE = "INSERT INTO sms_codes VALUES(?, ?, ?)"
+private const val INSERT_SMS_CODE = "INSERT INTO sms_codes VALUES(?, ?, ?)"
 private const val CHECK_SMS_AND_PHONE_EXISTS = "SELECT EXISTS(" +
         "SELECT id " +
         "FROM sms_codes " +
@@ -23,6 +24,8 @@ private const val GET_USER_ID_BY_TOKEN = "SELECT user_id FROM users_tokens WHERE
 private const val GET_ROOMS_LIST = "SELECT rooms.id, rooms.name, rooms.date_created FROM rooms " +
         "INNER JOIN members ON room_id = rooms.id " +
         "WHERE members.user_id = ?"
+private const val INSERT_MESSAGE = "INSERT INTO messages VALUES(?,?,?,?,?)"
+private const val GET_MESSAGES_BY_ROOM_ID = "SELECT id, user_id, date, text FROM messages WHERE room_id = ?"
 
 @Suppress("LiftReturnOrAssignment")
 class DbRepository(private val dbConnection: Connection) {
@@ -46,11 +49,11 @@ class DbRepository(private val dbConnection: Connection) {
             // get user id by phone
             selectUserIdStatement.setInt(1, user.phone)
             val idResult = selectUserIdStatement.executeQuery().also { it.next() }
-            val userId = idResult.getInt(1)
+            val userId = idResult.getLong(1)
 
             // insert authorization token
             insertTokenStatement.setInt(1, 0)
-            insertTokenStatement.setInt(2, userId)
+            insertTokenStatement.setLong(2, userId)
             insertTokenStatement.setString(3, token)
             val insertTokenResult = insertTokenStatement.executeUpdate()
 
@@ -71,7 +74,6 @@ class DbRepository(private val dbConnection: Connection) {
             dbConnection.autoCommit = true
         }
     }
-
 
     fun isPhoneNumberExists(phone: String): Boolean {
         try {
@@ -107,29 +109,30 @@ class DbRepository(private val dbConnection: Connection) {
 
     fun confirmLogin(phone: Int, smsCode: Int, token: String): Status {
         try {
-            val validateSmsStatement = dbConnection.prepareStatement(CHECK_SMS_AND_PHONE_EXISTS)
+//            val validateSmsStatement = dbConnection.prepareStatement(CHECK_SMS_AND_PHONE_EXISTS)
             val selectUserIdStatement = dbConnection.prepareStatement(GET_USER_ID_BY_PHONE)
             val insertUserTokenStatement = dbConnection.prepareStatement(INSERT_USER_TOKEN)
 
             // begin transaction
             dbConnection.autoCommit = false
 
-            // first validate if the phone and the sms code are connected
+            /*// first validate if the phone and the sms code are connected
             validateSmsStatement.setInt(1, phone)
             validateSmsStatement.setInt(2, smsCode)
             val result = validateSmsStatement.executeQuery().also { it.next() }
             // if > 0  - validated connection
-            val exists = result.getInt(result.metaData.getColumnName(1))
+            val exists = result.getInt(result.metaData.getColumnName(1))*/
+            val exists = 1
 
             if (exists > 0) {
                 // get user id by phone
                 selectUserIdStatement.setInt(1, phone)
                 val idResult = selectUserIdStatement.executeQuery().also { it.next() }
-                val userId = idResult.getInt(1)
+                val userId = idResult.getLong(1)
 
                 // insert authorization token
                 insertUserTokenStatement.setInt(1, 0)
-                insertUserTokenStatement.setInt(2, userId)
+                insertUserTokenStatement.setLong(2, userId)
                 insertUserTokenStatement.setString(3, token)
                 val insertTokenResult = insertUserTokenStatement.executeUpdate()
 
@@ -150,13 +153,21 @@ class DbRepository(private val dbConnection: Connection) {
         }
     }
 
-    fun createNewRoom(token: String, roomName: String, roomMembers: Array<Int>): Status {
+    fun createNewRoom(token: String, roomName: String, array: Array<Long>): Status {
         try {
+            val getTokenStatement = dbConnection.prepareStatement(GET_USER_ID_BY_TOKEN)
             val insertNewRoomStatement = dbConnection.prepareStatement(INSERT_NEW_ROOM, Statement.RETURN_GENERATED_KEYS)
             val insertMemberStatement = dbConnection.prepareStatement(INSERT_NEW_MEMBER)
 
             // begin transaction
             dbConnection.autoCommit = false
+
+            // get user id
+            getTokenStatement.setString(1, token)
+            val result = getTokenStatement.executeQuery()
+            if (!result.next()) return Status(false, "Wrong token")
+            val userId = result.getLong(1)
+            val roomMembers = array.plus(userId)
 
             // insert new room
             insertNewRoomStatement.setInt(1, 0)
@@ -171,7 +182,7 @@ class DbRepository(private val dbConnection: Connection) {
             for (i in roomMembers.indices) {
                 insertMemberStatement.setInt(1, 0)
                 insertMemberStatement.setInt(2, insertedRoomId)
-                insertMemberStatement.setInt(3, roomMembers[i])
+                insertMemberStatement.setLong(3, roomMembers[i])
                 if (insertMemberStatement.executeUpdate() != 1) throw SQLException("Error while inserting new room members")
             }
 
@@ -214,9 +225,79 @@ class DbRepository(private val dbConnection: Connection) {
 
             dbConnection.commit()
             return Status(true, data = list)
-        } catch (e: SQLIntegrityConstraintViolationException) {
+        } catch (e: Exception) {
             e.printStackTrace()
-            return Status(false, "Some of the members are not existing users")
+            return Status(false)
+        } finally {
+            dbConnection.rollback()
+            dbConnection.autoCommit = true
+        }
+    }
+
+    fun insertMessage(token: String, roomId: Long, message: String): Status {
+        try {
+            val getTokenStatement = dbConnection.prepareStatement(GET_USER_ID_BY_TOKEN)
+            val insertMessageStatement = dbConnection.prepareStatement(INSERT_MESSAGE)
+
+            // begin transaction
+            dbConnection.autoCommit = false
+
+            // get user id
+            getTokenStatement.setString(1, token)
+            val result = getTokenStatement.executeQuery()
+            if (!result.next()) return Status(false, "Wrong token")
+            val userId = result.getLong(1)
+
+            // insert new message
+            insertMessageStatement.setInt(1, 0)
+            insertMessageStatement.setLong(2, roomId)
+            insertMessageStatement.setLong(3, userId)
+            insertMessageStatement.setLong(4, System.currentTimeMillis())
+            insertMessageStatement.setString(5, message)
+            insertMessageStatement.executeUpdate()
+
+            dbConnection.commit()
+            return Status(true)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return Status(false)
+        } finally {
+            dbConnection.rollback()
+            dbConnection.autoCommit = true
+        }
+    }
+
+    fun getMessages(token: String, roomId: Long): Status {
+        try {
+            val getTokenStatement = dbConnection.prepareStatement(GET_USER_ID_BY_TOKEN)
+            val getMesssagesStatement = dbConnection.prepareStatement(GET_MESSAGES_BY_ROOM_ID)
+
+            // begin transaction
+            dbConnection.autoCommit = false
+
+            // get user id
+            getTokenStatement.setString(1, token)
+            val result = getTokenStatement.executeQuery()
+            if (!result.next()) return Status(false, "Wrong token")
+            val userId = result.getLong(1)
+            // todo check if this id is in the room members
+
+            // get messages
+            getMesssagesStatement.setLong(1, roomId)
+            val messagesResult = getMesssagesStatement.executeQuery()
+            val list = ArrayList<Message>()
+            while (messagesResult.next()) {
+                val message = Message(
+                    messagesResult.getLong(1),
+                    messagesResult.getLong(2),
+                    messagesResult.getLong(3),
+                    messagesResult.getString(4)
+                )
+                list.add(message)
+            }
+
+            dbConnection.commit()
+            return Status(true, data = list)
         } catch (e: Exception) {
             e.printStackTrace()
             return Status(false)

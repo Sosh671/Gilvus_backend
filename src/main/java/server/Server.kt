@@ -23,7 +23,7 @@ class Server(private val serverPort: Int) : Thread(), KoinComponent {
 
     private fun testCreateNewRoom() {
         val cc by inject<ClientRequestsHandler>()
-        cc.createChatRoom("", intArrayOf(4,5, 21).toTypedArray())
+        cc.createChatRoom("", longArrayOf(4,5, 21).toTypedArray())
     }
 
     private fun testGetRooms() {
@@ -35,8 +35,26 @@ class Server(private val serverPort: Int) : Thread(), KoinComponent {
         println(dd)
     }
 
+    private fun testSendMessage() {
+        val cc by inject<ClientRequestsHandler>()
+        var dd: Status
+        dd = cc.sendMessage("1234", 15, "test message")
+        println(dd)
+        dd = cc.sendMessage("mKewwUQxGeycoUuNcrmQt3gpgyyMkA",15, "test b")
+        dd = cc.sendMessage("mKewwUQxGeycoUuNcrmQt3gpgyyMkA",16, "test a")
+        println(dd)
+    }
+
+    private fun testGetMessages() {
+        val cc by inject<ClientRequestsHandler>()
+        var dd: Status
+        dd = cc.getMessages("1234", 15)
+        println(dd)
+        dd = cc.getMessages("mKewwUQxGeycoUuNcrmQt3gpgyyMkA",15)
+        println(dd)
+    }
+
     override fun run() {
-        testGetRooms()
         try {
             val serverSocket = ServerSocket(serverPort)
             while (true) {
