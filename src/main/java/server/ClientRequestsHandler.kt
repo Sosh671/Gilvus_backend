@@ -13,20 +13,26 @@ class ClientRequestsHandler(
     private val dbRepository: DbRepository,
     private val smsController: SmsController) : Actions {
 
+    //TODO refactor to db, remove object
     var registrationData: RegistrationData? = null
-
-    override fun registration(phoneNumber: Int, name: String): Status {
-        val alreadyRegistered = dbRepository.isPhoneNumberExists("$phoneNumber")
+    override fun registration(phoneNumber: String, name: String): Status {
+        val alreadyRegistered = dbRepository.isPhoneNumberExists(phoneNumber)
         if (alreadyRegistered) return Status(false, "Phone already registered")
 
         val generatedSms = smsController.generateSms()
         smsController.sendSms(generatedSms)
 
         registrationData = RegistrationData(phoneNumber, name, generatedSms)
-        return Status(true, "Code is: $generatedSms")
+
+        // todo mocked sms, mb remove later
+        val status = Status(true)
+        val obj = JSONObject()
+        obj.put("code", generatedSms)
+        status.data = obj
+        return status
     }
 
-    override fun confirmRegistration(phoneNumber: Int, smsCode: Int): Status {
+    override fun confirmRegistration(phoneNumber: String, smsCode: Int): Status {
         try {
             if (phoneNumber != registrationData?.phone) return Status(false, "Wrong sms code")
             if (smsCode != registrationData?.smsCode) return Status(false, "Wrong sms code")
@@ -60,19 +66,26 @@ class ClientRequestsHandler(
         }
     }
 
+    //TODO refactor to db, remove object
     var loginData: RegistrationData? = null
-    override fun login(phoneNumber: Int, password: String?): Status {
+    override fun login(phoneNumber: String, password: String?): Status {
         val validate = dbRepository.validateCredentials(phoneNumber, password)
         if (!validate.status) return Status(false, "Wrong phone or password")
 
         val generatedSms = smsController.generateSms()
         smsController.sendSms(generatedSms)
 
-        loginData = RegistrationData(phoneNumber, password?:"", generatedSms)
-        return Status(true, "Code is: $generatedSms")
+        loginData = RegistrationData(phoneNumber, "", generatedSms)
+
+        // todo mocked sms, mb remove later
+        val status = Status(true)
+        val obj = JSONObject()
+        obj.put("code", generatedSms)
+        status.data = obj
+        return status
     }
 
-    override fun confirmAuthorization(phoneNumber: Int, smsCode: Int): Status {
+    override fun confirmLogin(phoneNumber: String, smsCode: Int): Status {
         if (phoneNumber != loginData?.phone) return Status(false, "Wrong sms code")
         if (smsCode != loginData?.smsCode) return Status(false, "Wrong sms code")
         val token = generateToken()
@@ -85,8 +98,8 @@ class ClientRequestsHandler(
         return result
     }
 
-    override fun createChatRoom(token: String, members: Array<Long>): Status {
-       return dbRepository.createNewRoom(token, "room", members)
+    override fun createChatRoom(token: String, roomName: String, members: Array<Long>): Status {
+       return dbRepository.createNewRoom(token, roomName, members)
     }
 
     override fun getChatRoomsList(token: String): Status {

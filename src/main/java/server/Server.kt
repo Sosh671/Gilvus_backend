@@ -9,7 +9,7 @@ import java.util.*
 class Server(private val serverPort: Int) : Thread(), KoinComponent {
 
     private fun testRegistration() {
-        val phone = 12
+        val phone = "12"
         val test by inject<ClientRequestsHandler>()
         val status1 = test.registration(phone, "vasiliy")
         val status2 = test.confirmRegistration(phone, test.registrationData!!.smsCode)
@@ -23,7 +23,7 @@ class Server(private val serverPort: Int) : Thread(), KoinComponent {
 
     private fun testCreateNewRoom() {
         val cc by inject<ClientRequestsHandler>()
-        cc.createChatRoom("", longArrayOf(4,5, 21).toTypedArray())
+        cc.createChatRoom("","room 1", longArrayOf(4,5, 21).toTypedArray())
     }
 
     private fun testGetRooms() {

@@ -50,13 +50,25 @@ class ClientSocket(private val actionsHandler: Actions, private val clientSocket
                     "confirm_registration" -> {
                         requestedRegistrationConfirmation(data)
                     }
+                    "get_rooms" -> {
+                        requestedGetRooms(data)
+                    }
+                    "add_room" -> {
+                        requestedAddRoom(data)
+                    }
+                    "get_messages" -> {
+                        requestedGetMessages(data)
+                    }
+                    "send_message" -> {
+                        requestedSendMessage(data)
+                    }
                     else -> {
                         respondToClient(Status(false, "Unknown request: $request\n"))
                     }
                 }
             } catch (e: JSONException) {
                 e.printStackTrace()
-                respondToClient(Status(false, "You should pass valid json\n"))
+                respondToClient(Status(false, "You should pass valid json"))
             } catch (e: Exception) {
                 e.printStackTrace()
                 respondToClient(Status(false, "Unknown error\n"))
@@ -69,7 +81,7 @@ class ClientSocket(private val actionsHandler: Actions, private val clientSocket
 
     private fun requestedRegistrationConfirmation(obj: JSONObject) {
         try {
-            val phone = obj.getInt("phone")
+            val phone = obj.getString("phone")
             val code = obj.getInt("code")
             val result = actionsHandler.confirmRegistration(phone, code)
             respondToClient(result)
@@ -83,7 +95,7 @@ class ClientSocket(private val actionsHandler: Actions, private val clientSocket
 
     private fun requestedRegistration(obj: JSONObject) {
         try {
-            val phone = obj.getInt("phone")
+            val phone = obj.getString("phone")
             val result = actionsHandler.registration(phone, "New user")
             respondToClient(result)
         } catch (e: JSONException) {
@@ -97,9 +109,9 @@ class ClientSocket(private val actionsHandler: Actions, private val clientSocket
 
     private fun requestedLoginConfirmation(obj: JSONObject) {
         try {
-            val phone = obj.getInt("phone")
+            val phone = obj.getString("phone")
             val code = obj.getInt("code")
-            val result = actionsHandler.confirmAuthorization(phone, code)
+            val result = actionsHandler.confirmLogin(phone, code)
             respondToClient(result)
         } catch (e: JSONException) {
             e.printStackTrace()
@@ -111,13 +123,74 @@ class ClientSocket(private val actionsHandler: Actions, private val clientSocket
 
     private fun requestedLogin(obj: JSONObject) {
         try {
-            val phone = obj.getInt("phone")
+            val phone = obj.getString("phone")
             val password = obj.getString("password")
             val result = actionsHandler.login(phone, password)
             respondToClient(result)
         } catch (e: JSONException) {
-            val phone = obj.getInt("phone")
+            val phone = obj.getString("phone")
             val result = actionsHandler.login(phone, null)
+            respondToClient(result)
+        } catch (e: JSONException) {
+            e.printStackTrace()
+            respondToClient(Status(false, "Wrong arguments"))
+        } catch (e: Exception) {
+            respondToClient(Status(false, "Login error"))
+        }
+    }
+
+    private fun requestedGetRooms(obj: JSONObject) {
+        try {
+            val token = obj.getString("token")
+            val result = actionsHandler.getChatRoomsList(token)
+            respondToClient(result)
+        } catch (e: JSONException) {
+            e.printStackTrace()
+            respondToClient(Status(false, "Wrong arguments"))
+        } catch (e: Exception) {
+            respondToClient(Status(false, "Login error"))
+        }
+    }
+
+    private fun requestedAddRoom(obj: JSONObject) {
+        try {
+            val token = obj.getString("token")
+            val name = obj.getString("title")
+            val members = ArrayList<Long>()
+            val jsonArray = obj.getJSONArray("members")
+            for (i in 0 until jsonArray.length())
+                members.add(jsonArray.getJSONObject(i).getLong("id"))
+
+            val result = actionsHandler.createChatRoom(token, name, members.toTypedArray())
+            respondToClient(result)
+        } catch (e: JSONException) {
+            e.printStackTrace()
+            respondToClient(Status(false, "Wrong arguments"))
+        } catch (e: Exception) {
+            respondToClient(Status(false, "Login error"))
+        }
+    }
+
+    private fun requestedGetMessages(obj: JSONObject) {
+        try {
+            val token = obj.getString("token")
+            val roomId = obj.getLong("room_id")
+            val result = actionsHandler.getMessages(token, roomId)
+            respondToClient(result)
+        } catch (e: JSONException) {
+            e.printStackTrace()
+            respondToClient(Status(false, "Wrong arguments"))
+        } catch (e: Exception) {
+            respondToClient(Status(false, "Login error"))
+        }
+    }
+
+    private fun requestedSendMessage(obj: JSONObject) {
+        try {
+            val token = obj.getString("token")
+            val roomId = obj.getLong("room_id")
+            val message = obj.getString("message")
+            val result = actionsHandler.sendMessage(token, roomId, message)
             respondToClient(result)
         } catch (e: JSONException) {
             e.printStackTrace()
