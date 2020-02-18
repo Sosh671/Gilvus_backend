@@ -23,16 +23,18 @@ class Server(private val serverPort: Int) : Thread(), KoinComponent {
 
     private fun testCreateNewRoom() {
         val cc by inject<ClientRequestsHandler>()
-        cc.createChatRoom("","room 1", longArrayOf(4,5, 21).toTypedArray())
+        cc.createChatRoom(userToken,"room 1", longArrayOf(4,5, 21).toTypedArray())
     }
 
+    //val userToken = "2132"
+    val userToken = "lEdE6rHnpbCZlOEmHnrxqQ4G9R6F0w"
     private fun testGetRooms() {
         val cc by inject<ClientRequestsHandler>()
         var dd: Status
-        dd = cc.getChatRoomsList("1234")
-        println(dd)
-        dd = cc.getChatRoomsList("mKewwUQxGeycoUuNcrmQt3gpgyyMkA")
-        println(dd)
+//        dd = cc.getChatRoomsList("1234")
+//        println("test $dd")
+        dd = cc.getChatRoomsList(userToken)
+//        println("test $dd")
     }
 
     private fun testSendMessage() {

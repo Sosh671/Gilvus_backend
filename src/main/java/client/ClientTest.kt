@@ -24,13 +24,13 @@ class Reader(private val stream: InputStream) : Thread() {
 
 var oStream: OutputStream? = null
 
-val phone = "13131123123"
+val phone = "131311231213"
 val password = "password"
-val userToken = "2132"
-//val userToken = "mKewwUQxGeycoUuNcrmQt3gpgyyMkA"
-val userId1 = 1
-val userId2 = 2
-val userId3 = 3
+//val userToken = "2132"
+val userToken = "lEdE6rHnpbCZlOEmHnrxqQ4G9R6F0w"
+val userId1 = 4
+val userId2 = 5
+val userId3 = 15
 val roomId = 1
 
 fun main() {
@@ -47,8 +47,12 @@ fun main() {
 
 //        testRegistration()
 //        testRegistrationConfirm()
-        testLogin()
-        testLoginConfirm()
+//        testLogin()
+//        testLoginConfirm()
+        testAddRoom()
+        testGetRooms()
+//        testGetMessages()
+//        testSendMessage()
     } catch (e: Exception) {
         e.printStackTrace()
     }
@@ -121,7 +125,7 @@ fun testSendMessage() {
     dataObject.put("room_id", roomId)
     dataObject.put("message", "Lorem ipsum dolor sit amet, consectetur adipiscing elit.")
 
-    formRequestObject("get_messages", dataObject)
+    formRequestObject("send_message", dataObject)
 }
 
 fun formRequestObject(request: String, data: JSONObject) {

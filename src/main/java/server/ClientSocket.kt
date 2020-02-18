@@ -201,8 +201,9 @@ class ClientSocket(private val actionsHandler: Actions, private val clientSocket
     }
 
     private fun respondToClient(status: Status) {
-        val obj: JSONObject = status.data as? JSONObject ?: JSONObject()
+        val obj = JSONObject()
         obj.put("status", status.status)
+        (status.data as? JSONObject)?.let { obj.put("data", it) }
         status.errorMessage?.let { obj.put("message", it) }
 
         outputStream?.write("$obj\n".toByteArray())

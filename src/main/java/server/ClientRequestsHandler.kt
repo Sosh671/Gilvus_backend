@@ -1,8 +1,10 @@
 package server
 
 import data.models.RegistrationData
+import data.models.Room
 import data.models.User
 import db.DbRepository
+import org.json.JSONArray
 import org.json.JSONObject
 import sms.SmsController
 import util.Status
@@ -103,7 +105,11 @@ class ClientRequestsHandler(
     }
 
     override fun getChatRoomsList(token: String): Status {
-        return dbRepository.getAvailableRooms(token)
+        val result = dbRepository.getAvailableRooms(token)
+        val data = result.data as? List<Room>
+        data?.let { result.data = JSONObject().apply { put("rooms", JSONArray(it)) } }
+
+        return result
     }
 
     override fun sendMessage(token: String, roomId: Long, message: String): Status {
