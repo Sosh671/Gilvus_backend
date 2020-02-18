@@ -1,5 +1,6 @@
 package server
 
+import data.models.Message
 import data.models.RegistrationData
 import data.models.Room
 import data.models.User
@@ -117,7 +118,10 @@ class ClientRequestsHandler(
     }
 
     override fun getMessages(token: String, roomId: Long, offset: Int, limit: Int): Status {
-        return dbRepository.getMessages(token, roomId)
+        val result = dbRepository.getMessages(token, roomId)
+        val data = result.data as? List<Message>
+        data?.let { result.data = JSONObject().apply { put("messages", JSONArray(it)) } }
+        return result
     }
 
     private fun generateToken(): String {

@@ -31,7 +31,7 @@ val userToken = "lEdE6rHnpbCZlOEmHnrxqQ4G9R6F0w"
 val userId1 = 4
 val userId2 = 5
 val userId3 = 15
-val roomId = 1
+val roomId = 19
 
 fun main() {
 
@@ -49,10 +49,10 @@ fun main() {
 //        testRegistrationConfirm()
 //        testLogin()
 //        testLoginConfirm()
-        testAddRoom()
-        testGetRooms()
-//        testGetMessages()
+//        testAddRoom()
+//        testGetRooms()
 //        testSendMessage()
+//        testGetMessages()
     } catch (e: Exception) {
         e.printStackTrace()
     }
