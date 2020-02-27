@@ -22,7 +22,7 @@ private const val GET_ROOMS_LIST = "SELECT rooms.id, rooms.name, rooms.date_crea
         "INNER JOIN members ON room_id = rooms.id " +
         "WHERE members.user_id = ?"
 private const val INSERT_MESSAGE = "INSERT INTO messages VALUES(?,?,?,?,?)"
-private const val GET_MESSAGES_BY_ROOM_ID = "SELECT id, user_id, date, text FROM messages WHERE room_id = ?"
+private const val GET_MESSAGES_BY_ROOM_ID = "SELECT id, user_id, date, text, isRead FROM messages WHERE room_id = ?"
 private const val CHECK_PHONE = "SELECT EXISTS(SELECT id FROM users WHERE phone = ?)"
 private const val CHECK_PHONE_AND_PASSWORD = "SELECT EXISTS(SELECT id FROM users WHERE phone = ? AND password = ?)"
 
@@ -296,7 +296,9 @@ class DbRepository(private val dbConnection: Connection) {
                     messagesResult.getLong(1),
                     messagesResult.getLong(2),
                     messagesResult.getLong(3),
-                    messagesResult.getString(4)
+                    messagesResult.getString(4),
+                    userId == messagesResult.getLong(2),
+                    messagesResult.getBoolean(5)
                 )
                 list.add(message)
             }
