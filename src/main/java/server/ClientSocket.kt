@@ -62,6 +62,9 @@ class ClientSocket(private val actionsHandler: Actions, private val clientSocket
                         "send_message" -> {
                             requestedSendMessage(data)
                         }
+                        "check_contacts" -> {
+                            requestedCheckPhoneNumbers(data)
+                        }
                     else -> {
                         respondToClient(null, Status(false, "Unknown request: $request\n"))
                     }
@@ -197,6 +200,25 @@ class ClientSocket(private val actionsHandler: Actions, private val clientSocket
             respondToClient("send_message", Status(false, "Wrong arguments"))
         } catch (e: Exception) {
             respondToClient("send_message", Status(false, "Login error"))
+        }
+    }
+
+    private fun requestedCheckPhoneNumbers(obj: JSONObject) {
+        try {
+            val token = obj.getString("token")
+            val numbers = ArrayList<String>()
+            val jsonArray = obj.getJSONArray("phone_numbers")
+            for (i in 0 until jsonArray.length())
+                numbers.add(jsonArray.getJSONObject(i).getString("number"))
+
+            val result = actionsHandler.checkContacts(token, numbers.toTypedArray())
+            respondToClient("check_contacts", result)
+        } catch (e: JSONException) {
+            e.printStackTrace()
+            respondToClient("check_contacts", Status(false, "Wrong arguments"))
+        } catch (e: Exception) {
+            respondToClient("check_contacts", Status(false, "Login error"))
+
         }
     }
 

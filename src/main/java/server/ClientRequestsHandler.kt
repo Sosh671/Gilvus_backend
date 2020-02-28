@@ -1,9 +1,6 @@
 package server
 
-import data.models.Message
-import data.models.RegistrationData
-import data.models.Room
-import data.models.User
+import data.models.*
 import db.DbRepository
 import org.json.JSONArray
 import org.json.JSONObject
@@ -109,8 +106,11 @@ class ClientRequestsHandler(
         val result = dbRepository.getAvailableRooms(token)
         val data = result.data as? List<Room>
         data?.let { result.data = JSONObject().apply { put("rooms", JSONArray(it)) } }
-
         return result
+    }
+
+    override fun getRoomInfo(token: String, roomId: Long): Status {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     override fun sendMessage(token: String, roomId: Long, message: String): Status {
@@ -121,6 +121,13 @@ class ClientRequestsHandler(
         val result = dbRepository.getMessages(token, roomId)
         val data = result.data as? List<Message>
         data?.let { result.data = JSONObject().apply { put("messages", JSONArray(it)) } }
+        return result
+    }
+
+    override fun checkContacts(token: String, numbers: Array<String>): Status {
+        val result = dbRepository.checkPhoneNumbersExist(token, numbers)
+        val data = result.data as? List<IdAndPhone>
+        data?.let { result.data = JSONObject().apply { put("registered_numbers", JSONArray(it)) } }
         return result
     }
 

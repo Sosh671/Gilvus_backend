@@ -8,6 +8,8 @@ import java.util.*
 
 class Server(private val serverPort: Int) : Thread(), KoinComponent {
 
+    private val testToken = "mKewwUQxGeycoUuNcrmQt3gpgyyMkA"
+
     private fun testRegistration() {
         val phone = "12"
         val test by inject<ClientRequestsHandler>()
@@ -23,18 +25,16 @@ class Server(private val serverPort: Int) : Thread(), KoinComponent {
 
     private fun testCreateNewRoom() {
         val cc by inject<ClientRequestsHandler>()
-        cc.createChatRoom(userToken,"room 1", longArrayOf(4,5, 21).toTypedArray())
+        cc.createChatRoom(testToken,"room 1", longArrayOf(4,5, 21).toTypedArray())
     }
 
-    //val userToken = "2132"
-    val userToken = "lEdE6rHnpbCZlOEmHnrxqQ4G9R6F0w"
     private fun testGetRooms() {
         val cc by inject<ClientRequestsHandler>()
         var dd: Status
-//        dd = cc.getChatRoomsList("1234")
-//        println("test $dd")
-        dd = cc.getChatRoomsList(userToken)
-//        println("test $dd")
+        dd = cc.getChatRoomsList("1234")
+        println("test $dd")
+        dd = cc.getChatRoomsList(testToken)
+        println("test $dd")
     }
 
     private fun testSendMessage() {
@@ -42,8 +42,8 @@ class Server(private val serverPort: Int) : Thread(), KoinComponent {
         var dd: Status
         dd = cc.sendMessage("1234", 15, "test message")
         println(dd)
-        dd = cc.sendMessage("mKewwUQxGeycoUuNcrmQt3gpgyyMkA",15, "test b")
-        dd = cc.sendMessage("mKewwUQxGeycoUuNcrmQt3gpgyyMkA",16, "test a")
+        dd = cc.sendMessage(testToken,15, "test b")
+        dd = cc.sendMessage(testToken,16, "test a")
         println(dd)
     }
 
@@ -52,8 +52,14 @@ class Server(private val serverPort: Int) : Thread(), KoinComponent {
         var dd: Status
         dd = cc.getMessages("1234", 15)
         println(dd)
-        dd = cc.getMessages("mKewwUQxGeycoUuNcrmQt3gpgyyMkA",15)
+        dd = cc.getMessages(testToken,15)
         println(dd)
+    }
+
+    private fun testCheckNumbers() {
+        val cc by inject<ClientRequestsHandler>()
+        val status = cc.checkContacts(testToken, arrayOf("2", "10", "0", "99"))
+        println(status)
     }
 
     override fun run() {

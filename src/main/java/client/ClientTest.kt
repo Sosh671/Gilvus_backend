@@ -58,6 +58,19 @@ fun main() {
     }
 }
 
+fun checkNumbers() {
+    val dataObject = JSONObject()
+    dataObject.put("token", userToken)
+    dataObject.put("phone_numbers", listOf(
+        JSONObject().apply { put("number", "2") },
+        JSONObject().apply { put("number", "1231") },
+        JSONObject().apply { put("number", "12") },
+        JSONObject().apply { put("number", "-1") }
+    ))
+
+    formRequestObject("check_contacts", dataObject)
+}
+
 fun testRegistration(password: Boolean = false) {
     val dataObject = JSONObject()
     dataObject.put("phone", phone)
@@ -101,7 +114,7 @@ fun testGetRooms() {
 
 fun testAddRoom() {
     val membersArray = JSONArray()
-    membersArray.put(JSONObject().apply { put("id", userId1); put("id", userId2); put("id", userId3);})
+    membersArray.put(JSONObject().apply { put("id", userId1); put("id", userId2); put("id", userId3); })
 
     val dataObject = JSONObject()
     dataObject.put("token", userToken)
