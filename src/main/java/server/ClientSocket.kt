@@ -3,6 +3,7 @@ package server
 import org.json.JSONException
 import org.json.JSONObject
 import util.Status
+import util.dirtyStringToNumbers
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
@@ -209,7 +210,7 @@ class ClientSocket(private val actionsHandler: Actions, private val clientSocket
             val numbers = ArrayList<String>()
             val jsonArray = obj.getJSONArray("phone_numbers")
             for (i in 0 until jsonArray.length())
-                numbers.add(jsonArray.getJSONObject(i).getString("number"))
+                numbers.add(jsonArray.getJSONObject(i).getString("number").dirtyStringToNumbers())
 
             val result = actionsHandler.checkContacts(token, numbers.toTypedArray())
             respondToClient("check_contacts", result)

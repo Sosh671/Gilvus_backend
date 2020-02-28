@@ -7,3 +7,5 @@ fun String.validatePhoneFormat(): Boolean {
         return false
     return true
 }
+
+fun String.dirtyStringToNumbers() = replace(Regex("[^0-9]+"), "")
