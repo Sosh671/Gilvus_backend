@@ -22,7 +22,7 @@ private const val SELECT_USER_ID_BY_TOKEN = "SELECT user_id FROM users_tokens WH
 private const val SELECT_ROOMS_LIST = "SELECT rooms.id, rooms.name, rooms.date_created FROM rooms " +
         "INNER JOIN members ON room_id = rooms.id " +
         "WHERE members.user_id = ?"
-private const val INSERT_MESSAGE = "INSERT INTO messages VALUES(?,?,?,?,?)"
+private const val INSERT_MESSAGE = "INSERT INTO messages VALUES(?,?,?,?,?, ?)"
 private const val SELECT_MESSAGES_BY_ROOM_ID = "SELECT id, user_id, date, text, isRead FROM messages WHERE room_id = ?"
 private const val CHECK_PHONE = "SELECT EXISTS(SELECT id FROM users WHERE phone = ?)"
 private const val CHECK_PHONE_AND_PASSWORD = "SELECT EXISTS(SELECT id FROM users WHERE phone = ? AND password = ?)"
@@ -260,6 +260,7 @@ class DbRepository(private val dbConnection: Connection) {
             insertMessageStatement.setLong(3, userId)
             insertMessageStatement.setLong(4, System.currentTimeMillis())
             insertMessageStatement.setString(5, message)
+            insertMessageStatement.setBoolean(6, false)
             insertMessageStatement.executeUpdate()
 
             dbConnection.commit()
