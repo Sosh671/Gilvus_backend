@@ -62,7 +62,13 @@ class Server(private val serverPort: Int) : Thread(), KoinComponent {
         println(status)
     }
 
+    private fun testNewMessage() {
+        val cc by inject<ClientRequestsHandler>()
+        cc.newMessage()
+    }
+
     override fun run() {
+        testNewMessage()
         try {
             val serverSocket = ServerSocket(serverPort)
             while (true) {

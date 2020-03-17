@@ -13,6 +13,8 @@ class ClientRequestsHandler(
     private val dbRepository: DbRepository,
     private val smsController: SmsController) : Actions {
 
+    private var authorizationToken = ""
+
     //TODO refactor to db, remove object
     var registrationData: RegistrationData? = null
     override fun registration(phoneNumber: String, name: String): Status {
@@ -37,6 +39,7 @@ class ClientRequestsHandler(
             if (phoneNumber != registrationData?.phone) return Status(false, "Wrong sms code")
             if (smsCode != registrationData?.smsCode) return Status(false, "Wrong sms code")
             val token = generateToken()
+            authorizationToken = token
 
             val result = dbRepository.insertUserAndToken(
                 User(
@@ -89,6 +92,7 @@ class ClientRequestsHandler(
         if (phoneNumber != loginData?.phone) return Status(false, "Wrong sms code")
         if (smsCode != loginData?.smsCode) return Status(false, "Wrong sms code")
         val token = generateToken()
+        authorizationToken = token
         val result = dbRepository.confirmLogin(phoneNumber, smsCode, token)
         if (result.status) {
             val obj = JSONObject()
@@ -122,6 +126,11 @@ class ClientRequestsHandler(
         val data = result.data as? List<Message>
         data?.let { result.data = JSONObject().apply { put("messages", JSONArray(it)) } }
         return result
+    }
+
+    fun newMessage() {
+        val members = dbRepository.getRoomMembers(16)
+        println(members)
     }
 
     override fun checkContacts(token: String, numbers: Array<String>): Status {

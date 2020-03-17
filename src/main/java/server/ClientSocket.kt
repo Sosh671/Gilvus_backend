@@ -10,9 +10,10 @@ import java.io.InputStreamReader
 import java.io.OutputStream
 import java.net.Socket
 
-class ClientSocket(private val actionsHandler: Actions, private val clientSocket: Socket) : Thread() {
+class ClientSocket(private val actionsHandler: ClientRequestsHandler, private val clientSocket: Socket) : Thread() {
 
     private var outputStream: OutputStream? = null
+    var token: String = ""
 
     override fun run() {
         try {
