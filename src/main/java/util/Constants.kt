@@ -6,7 +6,7 @@ object Constants {
     const val pcLocalhostAddress = "localhost"
     const val androidEmulatorLocalhostAddress = "10.0.2.2"
 
-    const val dbPath = "jdbc:mysql://localhost:3306/gilvus?useUnicode=true&characterEncoding=utf-8"
+    const val dbPath = "jdbc:mysql://localhost:3306/gilvus?useUnicode=true&characterEncoding=utf-8&serverTimezone=UTC"
     const val dbUser = "popeye"
     const val dbPassword = "password"
 }

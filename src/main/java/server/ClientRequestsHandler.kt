@@ -128,6 +128,7 @@ class ClientRequestsHandler(
         return result
     }
 
+    // todo push new message to members
     fun newMessage() {
         val members = dbRepository.getRoomMembers(16)
         println(members)

@@ -40,33 +40,33 @@ class ClientSocket(private val actionsHandler: ClientRequestsHandler, private va
                 val data = obj.getJSONObject("data")
 
                 when (request) {
-                        "registration" -> {
-                            requestedRegistration(data)
-                        }
-                        "login" -> {
-                            requestedLogin(data)
-                        }
-                        "confirm_login" -> {
-                            requestedLoginConfirmation(data)
-                        }
-                        "confirm_registration" -> {
-                            requestedRegistrationConfirmation(data)
-                        }
-                        "get_rooms" -> {
-                            requestedGetRooms(data)
-                        }
-                        "add_room" -> {
-                            requestedAddRoom(data)
-                        }
-                        "get_messages" -> {
-                            requestedGetMessages(data)
-                        }
-                        "send_message" -> {
-                            requestedSendMessage(data)
-                        }
-                        "check_contacts" -> {
-                            requestedCheckPhoneNumbers(data)
-                        }
+                    "registration" -> {
+                        requestedRegistration(data)
+                    }
+                    "confirm_registration" -> {
+                        requestedRegistrationConfirmation(data)
+                    }
+                    "login" -> {
+                        requestedLogin(data)
+                    }
+                    "confirm_login" -> {
+                        requestedLoginConfirmation(data)
+                    }
+                    "get_rooms" -> {
+                        requestedGetRooms(data)
+                    }
+                    "add_room" -> {
+                        requestedAddRoom(data)
+                    }
+                    "get_messages" -> {
+                        requestedGetMessages(data)
+                    }
+                    "send_message" -> {
+                        requestedSendMessage(data)
+                    }
+                    "check_contacts" -> {
+                        requestedCheckPhoneNumbers(data)
+                    }
                     else -> {
                         respondToClient(null, Status(false, "Unknown request: $request\n"))
                     }
@@ -84,20 +84,6 @@ class ClientSocket(private val actionsHandler: ClientRequestsHandler, private va
         clientSocket.close()
     }
 
-    private fun requestedRegistrationConfirmation(obj: JSONObject) {
-        try {
-            val phone = obj.getString("phone")
-            val code = obj.getInt("code")
-            val result = actionsHandler.confirmRegistration(phone, code)
-            respondToClient("confirm_registration", result)
-        } catch (e: JSONException) {
-            e.printStackTrace()
-            respondToClient("confirm_registration", Status(false, "Wrong arguments"))
-        } catch (e: Exception) {
-            respondToClient("confirm_registration", Status(false, "Confirmation error"))
-        }
-    }
-
     private fun requestedRegistration(obj: JSONObject) {
         try {
             val phone = obj.getString("phone")
@@ -112,17 +98,17 @@ class ClientSocket(private val actionsHandler: ClientRequestsHandler, private va
         }
     }
 
-    private fun requestedLoginConfirmation(obj: JSONObject) {
+    private fun requestedRegistrationConfirmation(obj: JSONObject) {
         try {
             val phone = obj.getString("phone")
             val code = obj.getInt("code")
-            val result = actionsHandler.confirmLogin(phone, code)
-            respondToClient("confirm_login", result)
+            val result = actionsHandler.confirmRegistration(phone, code)
+            respondToClient("confirm_registration", result)
         } catch (e: JSONException) {
             e.printStackTrace()
-            respondToClient("confirm_login", Status(false, "Wrong arguments"))
+            respondToClient("confirm_registration", Status(false, "Wrong arguments"))
         } catch (e: Exception) {
-            respondToClient("confirm_login", Status(false, "Confirmation error"))
+            respondToClient("confirm_registration", Status(false, "Confirmation error"))
         }
     }
 
@@ -141,6 +127,20 @@ class ClientSocket(private val actionsHandler: ClientRequestsHandler, private va
             respondToClient("login", Status(false, "Wrong arguments"))
         } catch (e: Exception) {
             respondToClient("login", Status(false, "Login error"))
+        }
+    }
+
+    private fun requestedLoginConfirmation(obj: JSONObject) {
+        try {
+            val phone = obj.getString("phone")
+            val code = obj.getInt("code")
+            val result = actionsHandler.confirmLogin(phone, code)
+            respondToClient("confirm_login", result)
+        } catch (e: JSONException) {
+            e.printStackTrace()
+            respondToClient("confirm_login", Status(false, "Wrong arguments"))
+        } catch (e: Exception) {
+            respondToClient("confirm_login", Status(false, "Confirmation error"))
         }
     }
 

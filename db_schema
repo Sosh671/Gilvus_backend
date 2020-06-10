@@ -1,10 +1,7 @@
+show databases;
+use gilvus;
+
 CREATE DATABASE IF NOT EXISTS gilvus;
-
-ALTER DATABASE gilvus CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-ALTER TABLE tablename CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-
-CREATE TABLE IF NOT EXISTS
 
 CREATE TABLE rooms(
     id INT NOT NULL AUTO_INCREMENT,
@@ -50,7 +47,7 @@ CREATE TABLE sms_codes(
     sms_code INT NOT NULL,
     PRIMARY KEY (id),
     FOREIGN KEY (user_phone) REFERENCES users (phone) ON DELETE CASCADE
-)
+);
 
 CREATE TABLE users_tokens(
     id INT NOT NULL AUTO_INCREMENT,
@@ -58,4 +55,9 @@ CREATE TABLE users_tokens(
     token VARCHAR(30) NOT NULL,
     PRIMARY KEY (id),
     FOREIGN KEY (user_id) REFERENCES users (id) ON UPDATE CASCADE ON DELETE CASCADE
-)
+);
+
+ALTER DATABASE gilvus CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+##
+ALTER TABLE tablename CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+##

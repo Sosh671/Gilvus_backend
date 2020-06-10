@@ -9,6 +9,27 @@ import java.util.*
 class Server(private val serverPort: Int) : Thread(), KoinComponent {
 
     private val testToken = "mKewwUQxGeycoUuNcrmQt3gpgyyMkA"
+    private val clients = ArrayList<ClientSocket>()
+
+    override fun run() {
+        testNewMessage()
+        try {
+            val serverSocket = ServerSocket(serverPort)
+            while (true) {
+                println("Listening... on $serverSocket")
+                val clientSocket = serverSocket.accept()
+                println("Accepted connection from $clientSocket")
+
+                val handler by inject<ClientRequestsHandler>()
+                val client = ClientSocket(handler, clientSocket)
+
+                clients.add(client)
+                client.start()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 
     private fun testRegistration() {
         val phone = "12"
@@ -66,28 +87,6 @@ class Server(private val serverPort: Int) : Thread(), KoinComponent {
         val cc by inject<ClientRequestsHandler>()
         cc.newMessage()
     }
-
-    override fun run() {
-        testNewMessage()
-        try {
-            val serverSocket = ServerSocket(serverPort)
-            while (true) {
-                println("Listening...")
-                val clientSocket = serverSocket.accept()
-                println("Accepted connection from $clientSocket")
-
-                val handler by inject<ClientRequestsHandler>()
-                val client = ClientSocket(handler, clientSocket)
-
-                clients.add(client)
-                client.start()
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    private val clients = ArrayList<ClientSocket>()
 
     fun getClients(): List<ClientSocket> {
         return clients

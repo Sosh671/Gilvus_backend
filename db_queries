@@ -1,3 +1,7 @@
+CREATE USER 'popeye'@'localhost' IDENTIFIED BY 'password';
+GRANT ALL PRIVILEGES ON * . * TO 'popeye'@'localhost';
+mysql -u popeye -p
+
 
 insert into members values(null, 1, 1);
 insert into users values(null, 'jojo', null, null);
