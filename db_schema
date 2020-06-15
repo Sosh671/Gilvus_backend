@@ -3,15 +3,6 @@ use gilvus;
 
 CREATE DATABASE IF NOT EXISTS gilvus;
 
-CREATE TABLE rooms(
-    id INT NOT NULL AUTO_INCREMENT,
-    owner_id INT NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    date_created BIGINT(25),
-    PRIMARY KEY (id),
-    FOREIGN KEY (owner_id) REFERENCES users (id) ON UPDATE CASCADE ON DELETE CASCADE
-);
-
 CREATE TABLE users(
     id INT NOT NULL AUTO_INCREMENT,
     name VARCHAR(255) NOT NULL,
@@ -19,6 +10,15 @@ CREATE TABLE users(
     password VARCHAR(36),
     avatar_url VARCHAR(255),
     PRIMARY KEY (id)
+);
+
+CREATE TABLE rooms(
+    id INT NOT NULL AUTO_INCREMENT,
+    owner_id INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    date_created BIGINT(25),
+    PRIMARY KEY (id),
+    FOREIGN KEY (owner_id) REFERENCES users (id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE TABLE members(
@@ -59,5 +59,5 @@ CREATE TABLE users_tokens(
 
 ALTER DATABASE gilvus CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ##
-ALTER TABLE tablename CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+ALTER TABLE messages CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ##

@@ -6,6 +6,5 @@ data class Message(
     val date: Long,
     val text: String,
     // true if token user id and userId here are the same
-    var sentByCurrentUser: Boolean,
-    var isRead: Boolean
+    var sentByCurrentUser: Boolean
 )

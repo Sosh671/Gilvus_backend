@@ -157,8 +157,9 @@ class DbRepository(private val dbConnection: Connection) {
 
             // insert new room
             insertNewRoomStatement.setInt(1, 0)
-            insertNewRoomStatement.setString(2, roomName)
-            insertNewRoomStatement.setLong(3, System.currentTimeMillis())
+            insertNewRoomStatement.setLong(2, userId)
+            insertNewRoomStatement.setString(3, roomName)
+            insertNewRoomStatement.setLong(4, System.currentTimeMillis())
             insertNewRoomStatement.executeUpdate()
             val keys = insertNewRoomStatement.generatedKeys.apply { next() }
             val insertedRoomId = keys.getLong(1)
@@ -240,7 +241,6 @@ class DbRepository(private val dbConnection: Connection) {
             insertMessageStatement.setLong(3, userId)
             insertMessageStatement.setLong(4, System.currentTimeMillis())
             insertMessageStatement.setString(5, message)
-            insertMessageStatement.setBoolean(6, false)
             insertMessageStatement.executeUpdate()
 
             dbConnection.commit()
@@ -318,8 +318,7 @@ class DbRepository(private val dbConnection: Connection) {
                     messagesResult.getLong(2),
                     messagesResult.getLong(3),
                     messagesResult.getString(4),
-                    userId == messagesResult.getLong(2),
-                    messagesResult.getBoolean(5)
+                    userId == messagesResult.getLong(2)
                 )
                 list.add(message)
             }
@@ -371,7 +370,7 @@ class DbRepository(private val dbConnection: Connection) {
 
 private const val SELECT_USER_ID_BY_PHONE = "SELECT id FROM users WHERE phone = ?"
 private const val SELECT_USER_ID_BY_TOKEN = "SELECT user_id FROM users_tokens WHERE token = ?"
-private const val SELECT_MESSAGES_BY_ROOM_ID = "SELECT id, user_id, date, text, isRead FROM messages WHERE room_id = ?"
+private const val SELECT_MESSAGES_BY_ROOM_ID = "SELECT id, user_id, date, text FROM messages WHERE room_id = ?"
 private const val SELECT_USER_TOKEN_BY_ID = "SELECT users.id FROM users " +
         "INNER JOIN users_tokens ON user_id = users.id " +
         "WHERE users_tokens.token = ?"
@@ -385,9 +384,9 @@ private const val SELECT_ROOM_MEMBERS = "SELECT user_id FROM members " +
 private const val INSERT_USER = "INSERT INTO users VALUES(?,?,?,?,?)"
 private const val INSERT_SMS_CODE = "INSERT INTO sms_codes VALUES(?, ?, ?)"
 private const val INSERT_USER_TOKEN = "INSERT INTO users_tokens VALUES(?,?,?)"
-private const val INSERT_NEW_ROOM = "INSERT INTO rooms VALUES(?,?,?)"
+private const val INSERT_NEW_ROOM = "INSERT INTO rooms VALUES(?,?,?,?)"
 private const val INSERT_NEW_MEMBER = "INSERT INTO members VALUES(?,?,?)"
-private const val INSERT_MESSAGE = "INSERT INTO messages VALUES(?,?,?,?,?, ?)"
+private const val INSERT_MESSAGE = "INSERT INTO messages VALUES(?,?,?,?,?)"
 
 private const val CHECK_PHONE = "SELECT EXISTS(SELECT id FROM users WHERE phone = ?)"
 private const val CHECK_PHONE_AND_PASSWORD = "SELECT EXISTS(SELECT id FROM users WHERE phone = ? AND password = ?)"
